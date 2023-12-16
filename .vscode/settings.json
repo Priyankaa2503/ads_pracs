@@ -1,7 +1,0 @@
-{
-  "files.associations": {
-    "*.ejs": "html",
-    "*.xml": "markdown",
-    "TRIE.C": "cpp"
-  }
-}

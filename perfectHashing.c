@@ -1,26 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
-
 // Define the secondary table structure
 typedef struct
 {
     int *table; // Pointer to the array that will hold the keys
     int size;   // Size of the secondary table
 } SecondaryTable;
-
 // Define the perfect hash table structure
 typedef struct
 {
     SecondaryTable *secondaryTables; // Array of secondary tables
     int size;                        // Size of the primary table
 } PerfectHashTable;
-
 // Primary hash function
 int primaryHashFunction(int key, int size)
 {
     return key % size; // Simple modulus hash function
 }
-
 // Secondary hash function
 int secondaryHashFunction(int key, int size)
 {
@@ -29,7 +25,6 @@ int secondaryHashFunction(int key, int size)
     int b = 42;                            // Coefficient b for the hash function
     return ((a * key + b) % prime) % size; // Hash function formula
 }
-
 // Function to create a new perfect hash table
 PerfectHashTable *createPerfectHashTable(int size)
 {
@@ -43,7 +38,6 @@ PerfectHashTable *createPerfectHashTable(int size)
     }
     return newTable; // Return the new perfect hash table
 }
-
 // Function to insert a key into the perfect hash table
 void insert(PerfectHashTable *perfectTable, int key)
 {
@@ -51,38 +45,38 @@ void insert(PerfectHashTable *perfectTable, int key)
     SecondaryTable *secondaryTable = &perfectTable->secondaryTables[primaryIndex]; // Get the secondary table at the primary index
     if (secondaryTable->table == NULL)                                             // If the secondary table is NULL
     {
-        secondaryTable->table = malloc(sizeof(int)); // Allocate memory for one key
-        secondaryTable->size = 1;                    // Set the size of the secondary table to 1
+        secondaryTable->table = malloc(sizeof(int) * perfectTable->size); // Allocate memory for the secondary table
+        for (int i = 0; i < perfectTable->size; i++)                      // Initialize all elements to -1
+        {
+            secondaryTable->table[i] = -1;
+        }
+        secondaryTable->size = perfectTable->size; // Set the size of the secondary table
     }
-    else // If the secondary table is not NULL
-    {
-        secondaryTable->table = realloc(secondaryTable->table, sizeof(int) * (secondaryTable->size + 1)); // Reallocate memory to hold one more key
-        secondaryTable->size++;                                                                           // Increase the size of the secondary table by 1
-    }
-    secondaryTable->table[secondaryTable->size - 1] = key; // Insert the key at the end of the secondary table
+    // Calculate the secondary index
+    int secondaryIndex = secondaryHashFunction(key, secondaryTable->size);
+    // Insert the key at the secondary index
+    secondaryTable->table[secondaryIndex] = key;
 }
-
 // Function to print the perfect hash table
 void printPerfectHashTable(PerfectHashTable *perfectTable)
 {
     for (int i = 0; i < perfectTable->size; i++) // For each primary index
     {
         SecondaryTable *secondaryTable = &perfectTable->secondaryTables[i]; // Get the secondary table at the primary index
-        printf("Primary index %d:\n", i);                                   // Print the primary index
+        printf("Primary index %d:\n", i);                                  
         for (int j = 0; j < secondaryTable->size; j++)                      // For each secondary index
         {
             printf("  Secondary index %d: %d\n", j, secondaryTable->table[j]); // Print the secondary index and the key at that index
         }
     }
 }
-
-// Main function
 int main()
 {
-    PerfectHashTable *perfectTable = createPerfectHashTable(9); // Create a new perfect hash table with a primary table size of 9
-    insert(perfectTable, 75);                                   // Insert the key 75
-    insert(perfectTable, 15);                                   // Insert the key 15
-    insert(perfectTable, 32);                                   // Insert the key 32
-    printPerfectHashTable(perfectTable);                        // Print the perfect hash table
-    return 0;                                                   // End the program
+    PerfectHashTable *perfectTable = createPerfectHashTable(9); 
+    insert(perfectTable, 75);                                
+    insert(perfectTable, 15);                                 
+    insert(perfectTable, 32);                                  
+    printPerfectHashTable(perfectTable);                       
+    return 0;                                                 
 }
+

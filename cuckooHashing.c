@@ -1,116 +1,107 @@
 #include <stdio.h>
 #include <stdlib.h>
-
-#define MAX_REHASHES 3
-
-typedef struct {
-    int key;
-    int value;
-} Entry;
-
-typedef struct {
-    int num_buckets;
-    int max_rehashes;
-    Entry** buckets;
-} HashTable;
-
-int hash1(int key, int size) {
-    return key % size;
+#define MAXN 11 // Maximum number of keys in the hash table
+// Arrays to store the hash tables
+int hashtable1[MAXN];
+int hashtable2[MAXN];
+// Function to create a hash function
+int hashfunction(int function, int key)
+{
+    switch (function)
+    {
+    case 1:
+        return key % MAXN;
+    case 2:
+        return (key / MAXN) % MAXN;
+    }
+    return 0;
 }
-
-int hash2(int key, int size) {
-    return (key / size) % size;
-}
-
-HashTable* createHashTable(int num_buckets, int max_rehashes) {
-    HashTable* hashTable = (HashTable*)malloc(sizeof(HashTable));
-    hashTable->num_buckets = num_buckets;
-    hashTable->max_rehashes = max_rehashes;
-    hashTable->buckets = (Entry**)calloc(num_buckets, sizeof(Entry*));
-    return hashTable;
-}
-
-void resizeHashTable(HashTable* hashTable) {
-    int new_num_buckets = hashTable->num_buckets * 2;
-    Entry** new_buckets = (Entry**)calloc(new_num_buckets, sizeof(Entry*));
-
-    for (int i = 0; i < hashTable->num_buckets; i++) {
-        Entry* entry = hashTable->buckets[i];
-        if (entry != NULL) {
-            int hash = hash1(entry->key, new_num_buckets);
-            if (new_buckets[hash] != NULL) {
-                hash = hash2(entry->key, new_num_buckets);
-            }
-            if (new_buckets[hash] != NULL) {
-                printf("Maximum rehashes reached. Unable to resize hash table.\n");
+// Function to place a key in the cuckoo hash table
+void place(int key, int tableNumber)
+{
+    int pos, i, temp;
+    for (i = 0; i < MAXN; i++)
+    {
+        if (tableNumber == 1)
+        {
+            pos = hashfunction(1, key);
+            if (hashtable1[pos] == -1)
+            {
+                hashtable1[pos] = key;
                 return;
             }
-            new_buckets[hash] = entry;
+            temp = hashtable1[pos];
+            hashtable1[pos] = key;
+            key = temp;
+            tableNumber = 2;
         }
-    }
-
-    free(hashTable->buckets);
-    hashTable->buckets = new_buckets;
-    hashTable->num_buckets = new_num_buckets;
-}
-
-void insert(HashTable* hashTable, int key, int value) {
-    int hash = hash1(key, hashTable->num_buckets);
-    Entry* entry = (Entry*)malloc(sizeof(Entry));
-    entry->key = key;
-    entry->value = value;
-
-    if (hashTable->buckets[hash] == NULL) {
-        hashTable->buckets[hash] = entry;
-    } else {
-        Entry* temp = hashTable->buckets[hash];
-        hashTable->buckets[hash] = entry;
-        hash = hash2(temp->key, hashTable->num_buckets);
-        if (hashTable->buckets[hash] != NULL) {
-            Entry* temp2 = hashTable->buckets[hash];
-            hashTable->buckets[hash] = temp;
-            insert(hashTable, temp2->key, temp2->value);
-        } else {
-            hashTable->buckets[hash] = temp;
-        }
-    }
-
-    if (hashTable->max_rehashes > 0) {
-        hashTable->max_rehashes--;
-        if (hashTable->max_rehashes == 0) {
-            resizeHashTable(hashTable);
+        else
+        {
+            pos = hashfunction(2, key);
+            if (hashtable2[pos] == -1)
+            {
+                hashtable2[pos] = key;
+                return;
+            }
+            temp = hashtable2[pos];
+            hashtable2[pos] = key;
+            key = temp;
+            tableNumber = 1;
         }
     }
 }
-
-int search(HashTable* hashTable, int key) {
-    int hash = hash1(key, hashTable->num_buckets);
-    if (hashTable->buckets[hash] != NULL && hashTable->buckets[hash]->key == key) {
-        return hashTable->buckets[hash]->value;
+// Function to insert a key into the hash table
+void insert(int key)
+{
+    int pos = hashfunction(1, key);
+    if (hashtable1[pos] != -1)
+    {
+        int temp = hashtable1[pos];
+        hashtable1[pos] = key;
+        place(temp, 2);
     }
-
-    hash = hash2(key, hashTable->num_buckets);
-    if (hashTable->buckets[hash] != NULL && hashTable->buckets[hash]->key == key) {
-        return hashTable->buckets[hash]->value;
+    else
+    {
+        hashtable1[pos] = key;
     }
-
-    return -1;
 }
 
-int main() {
-    HashTable* hashTable = createHashTable(10, MAX_REHASHES);
+int main()
+{
+    int i;
+    for (i = 0; i < MAXN; i++)
+    {
+        hashtable1[i] = -1;
+        hashtable2[i] = -1;
+    }
 
-    insert(hashTable, 1, 10);
-    insert(hashTable, 2, 20);
-    insert(hashTable, 3, 30);
+    insert(20);
+    insert(50);
+    insert(53);
+    insert(75);
+    insert(100);
+    insert(67);
+    insert(105);
+    insert(3);
+    insert(36);
+    insert(39);
 
-    int value = search(hashTable, 2);
-    printf("Value for key 2: %d\n", value);
+    printf("The hash table 1 is:\n");
+    for (i = 0; i < MAXN; i++)
+    {
+        printf("%d ", hashtable1[i]);
+    }
 
-    // delete(hashTable, 2);
-
-    value = search(hashTable, 2);
-    printf("Value for key 2: %d\n", value);
+    printf("\nThe hash table 2 is:\n");
+    for (i = 0; i < MAXN; i++)
+    {
+        printf("%d ", hashtable2[i]);
+    }
 
     return 0;
 }
+
+// hashtable1 and hashtable2 are the two hash tables.
+// The insert function first tries to insert the key into hashtable1. 
+//If there's a collision, it replaces the key at the colliding position and tries to place the replaced key into hashtable2 using the place function.
+// The place function alternates between the two tables until it finds an empty position or it has iterated MAXN times.
