@@ -12,6 +12,7 @@ typedef struct
     SecondaryTable *secondaryTables; // Array of secondary tables
     int size;                        // Size of the primary table
 } PerfectHashTable;
+
 // Primary hash function
 int primaryHashFunction(int key, int size)
 {

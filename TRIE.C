@@ -1,174 +1,188 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define N 26
-
-typedef struct TrieNode TrieNode;
+#define ALPHABET_SIZE 26
+// Trie node structure
 struct TrieNode
 {
-    char data;
-    TrieNode *children[N];
-    int is_leaf;
+    struct TrieNode *children[ALPHABET_SIZE];
+    int isEndOfWord;
 };
-
-TrieNode *make_trienode(char data)
+// Function to initialize a new trie node
+struct TrieNode *createNode()
 {
-    TrieNode *node = (TrieNode *)calloc(1, sizeof(TrieNode));
-    for (int i = 0; i < N; i++)
+    struct TrieNode *node = (struct TrieNode *)malloc(sizeof(struct TrieNode));
+    for (int i = 0; i < ALPHABET_SIZE; i++)
+    {
         node->children[i] = NULL;
-    node->is_leaf = 0;
-    node->data = data;
+    }
+    node->isEndOfWord = 0;
     return node;
 }
-
-void free_trienode(TrieNode *node)
+// Function to check if a node has no children
+int isNodeEmpty(struct TrieNode *node)
 {
-    for (int i = 0; i < N; i++)
+    for (int i = 0; i < ALPHABET_SIZE; i++)
     {
         if (node->children[i] != NULL)
         {
-            free_trienode(node->children[i]);
-        }
-    }
-    free(node);
-}
-
-TrieNode *insert_trie(TrieNode *root, char *word)
-{
-    TrieNode *temp = root;
-
-    for (int i = 0; word[i] != '\0'; i++)
-    {
-        int idx = (int)word[i] - 'a';
-        if (temp->children[idx] == NULL)
-        {
-            temp->children[idx] = make_trienode(word[i]);
-        }
-        temp = temp->children[idx];
-    }
-
-    temp->is_leaf = 1;
-    return root;
-}
-
-int search_trie(TrieNode *root, char *word)
-{
-    TrieNode *temp = root;
-
-    for (int i = 0; word[i] != '\0'; i++)
-    {
-        int position = word[i] - 'a';
-        if (temp->children[position] == NULL)
             return 0;
-        temp = temp->children[position];
+        }
     }
-    if (temp != NULL && temp->is_leaf == 1)
-        return 1;
-    return 0;
+    return 1;
+}
+
+// Function to insert a word into the trie
+void insert(struct TrieNode *root, const char *word)
+{
+    struct TrieNode *currentNode = root;
+    for (int i = 0; i < strlen(word); i++)
+    {
+        int index = word[i] - 'a';
+        if (currentNode->children[index] == NULL)
+        {
+            currentNode->children[index] = createNode();
+        }
+        currentNode = currentNode->children[index];
+    }
+    currentNode->isEndOfWord = 1;
+}
+
+// Function to search for a word in the trie
+int search(struct TrieNode *root, const char *word)
+{
+    struct TrieNode *currentNode = root;
+    for (int i = 0; i < strlen(word); i++)
+    {
+        int index = word[i] - 'a';
+        if (currentNode->children[index] == NULL)
+        {
+            return 0; // Word not found
+        }
+        currentNode = currentNode->children[index];
+    }
+    return (currentNode != NULL && currentNode->isEndOfWord);
 }
 
 // Function to delete a word from the trie
-TrieNode *delete_trie(TrieNode *root, char *word)
+int deleteWord(struct TrieNode *root, const char *word, int depth)
 {
-    TrieNode *temp = root;
-    TrieNode *path[N];
-    int length = 0;
-
-    for (int i = 0; word[i] != '\0'; i++)
+    if (root == NULL)
     {
-        int position = word[i] - 'a';
-        if (temp->children[position] == NULL)
-            return root; // Word not found, nothing to delete
-        path[length++] = temp;
-        temp = temp->children[position];
+        return 0;
     }
-
-    if (temp != NULL && temp->is_leaf == 1)
+    // Base case: If the last character of the word is reached
+    if (depth == strlen(word))
     {
-        temp->is_leaf = 0; // Mark the node as non-leaf
-        // Check if the node has no children, if so, remove it from the parent
-        if (temp->is_leaf == 0)
+        if (root->isEndOfWord)
         {
-            for (int i = length - 1; i >= 0; i--)
+            root->isEndOfWord = 0;
+
+            // Check if the node has no children, then it can be deleted
+            int isEmpty = 1;
+            for (int i = 0; i < ALPHABET_SIZE; i++)
             {
-                int position = word[i] - 'a';
-                if (temp->is_leaf == 0 && temp->children[position] == NULL)
+                if (root->children[i] != NULL)
                 {
-                    free(temp);
-                    path[i]->children[position] = NULL;
+                    isEmpty = 0;
+                    break;
                 }
-                else
-                {
-                    break; // Stop if we find a non-empty child
-                }
-                temp = path[i];
             }
+
+            return isEmpty;
+        }
+    }
+    else
+    {
+        int index = word[depth] - 'a';
+        if (deleteWord(root->children[index], word, depth + 1))
+        {
+            free(root->children[index]);
+            root->children[index] = NULL;
+
+            // Check if the current node is not the end of another word and has no other children
+            return !(root->isEndOfWord) && isNodeEmpty(root);
         }
     }
 
-    return root;
+    return 0;
 }
-
-void print_trie(TrieNode *root)
+// Function to free the memory allocated for the trie
+void freeTrie(struct TrieNode *root)
 {
-    if (!root)
-        return;
-    TrieNode *temp = root;
-    printf("%c -> ", temp->data);
-    for (int i = 0; i < N; i++)
+    if (root == NULL)
     {
-        print_trie(temp->children[i]);
+        return;
     }
+    for (int i = 0; i < ALPHABET_SIZE; i++)
+    {
+        freeTrie(root->children[i]);
+    }
+    free(root);
 }
 
-void print_search(TrieNode *root, char *word)
+// Function to display the menu
+void displayMenu()
 {
-    printf("Searching for %s: ", word);
-    if (search_trie(root, word) == 0)
-        printf("Not Found\n");
-    else
-        printf("Found!\n");
+    printf("\nMenu:\n");
+    printf("1. Insert a word\n");
+    printf("2. Search for a word\n");
+    printf("3. Delete a word\n");
+    printf("4. Exit\n");
 }
 
 int main()
 {
-    TrieNode *root = make_trienode('\0');
-    int choice = 3;
-    char str[25];
+    struct TrieNode *root = createNode();
+    int choice;
+    char word[50];
 
-    while (1)
+    do
     {
-        printf("\nEnter 1 to insert\nEnter 2 to search\nEnter 3 to delete word\nEnter 0 to exit\n");
+        displayMenu();
+        printf("Enter your choice: ");
         scanf("%d", &choice);
-        while (getchar() != '\n')
-            ;
 
         switch (choice)
         {
-        case 0:
-            free_trienode(root);
-            printf("\nTrie deleted");
-            return 0;
         case 1:
-            printf("Enter word to insert\n");
-            fgets(str, sizeof(str), stdin);
-            str[strcspn(str, "\n")] = '\0';
-            root = insert_trie(root, str);
-            print_trie(root);
+            printf("Enter the word to insert: ");
+            scanf("%s", word);
+            insert(root, word);
+            printf("Word '%s' inserted into the trie.\n", word);
             break;
         case 2:
-            printf("Enter word to search\n");
-            fgets(str, sizeof(str), stdin);
-            str[strcspn(str, "\n")] = '\0';
-            print_search(root, str);
+            printf("Enter the word to search: ");
+            scanf("%s", word);
+            if (search(root, word))
+            {
+                printf("Word '%s' found in the trie.\n", word);
+            }
+            else
+            {
+                printf("Word '%s' not found in the trie.\n", word);
+            }
             break;
         case 3:
-            printf("Enter word to delete\n");
-            fgets(str, sizeof(str), stdin);
-            str[strcspn(str, "\n")] = '\0';
-            root = delete_trie(root, str);
-            print_trie(root);
+            printf("Enter the word to delete: ");
+            scanf("%s", word);
+            if (deleteWord(root, word, 0))
+            {
+                printf("Word '%s' deleted from the trie.\n", word);
+            }
+            else
+            {
+                printf("Word '%s' not found in the trie.\n", word);
+            }
             break;
+        case 4:
+            printf("Exiting the program.\n");
+            break;
+        default:
+            printf("Invalid choice. Please enter a valid option.\n");
         }
-    }
+    } while (choice != 4);
+  // Free the allocated memory
+    freeTrie(root);
+    return 0;
 }
