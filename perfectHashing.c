@@ -1,17 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 // Define the secondary table structure
-typedef struct
+struct SecondaryTable
 {
     int *table; // Pointer to the array that will hold the keys
     int size;   // Size of the secondary table
-} SecondaryTable;
+} ;
 // Define the perfect hash table structure
-typedef struct
+struct PerfectHashTable
 {
-    SecondaryTable *secondaryTables; // Array of secondary tables
+    struct SecondaryTable *secondaryTables; // Array of secondary tables
     int size;                        // Size of the primary table
-} PerfectHashTable;
+} ;
 
 // Primary hash function
 int primaryHashFunction(int key, int size)
@@ -27,10 +27,10 @@ int secondaryHashFunction(int key, int size)
     return ((a * key + b) % prime) % size; // Hash function formula
 }
 // Function to create a new perfect hash table
-PerfectHashTable *createPerfectHashTable(int size)
+struct PerfectHashTable *createPerfectHashTable(int size)
 {
-    PerfectHashTable *newTable = malloc(sizeof(PerfectHashTable));     // Allocate memory for the perfect hash table
-    newTable->secondaryTables = malloc(sizeof(SecondaryTable) * size); // Allocate memory for the array of secondary tables
+    struct PerfectHashTable *newTable = malloc(sizeof(struct PerfectHashTable));     // Allocate memory for the perfect hash table
+    newTable->secondaryTables = malloc(sizeof(struct SecondaryTable) * size);         // Allocate memory for the array of secondary tables
     newTable->size = size;                                             // Set the size of the primary table
     for (int i = 0; i < size; i++)
     {
@@ -40,10 +40,10 @@ PerfectHashTable *createPerfectHashTable(int size)
     return newTable; // Return the new perfect hash table
 }
 // Function to insert a key into the perfect hash table
-void insert(PerfectHashTable *perfectTable, int key)
+void insert(struct PerfectHashTable *perfectTable, int key)
 {
     int primaryIndex = primaryHashFunction(key, perfectTable->size);               // Calculate the primary index
-    SecondaryTable *secondaryTable = &perfectTable->secondaryTables[primaryIndex]; // Get the secondary table at the primary index
+    struct SecondaryTable *secondaryTable = &perfectTable->secondaryTables[primaryIndex]; // Get the secondary table at the primary index
     if (secondaryTable->table == NULL)                                             // If the secondary table is NULL
     {
         secondaryTable->table = malloc(sizeof(int) * perfectTable->size); // Allocate memory for the secondary table
@@ -59,11 +59,11 @@ void insert(PerfectHashTable *perfectTable, int key)
     secondaryTable->table[secondaryIndex] = key;
 }
 // Function to print the perfect hash table
-void printPerfectHashTable(PerfectHashTable *perfectTable)
+void printPerfectHashTable(struct PerfectHashTable *perfectTable)
 {
     for (int i = 0; i < perfectTable->size; i++) // For each primary index
     {
-        SecondaryTable *secondaryTable = &perfectTable->secondaryTables[i]; // Get the secondary table at the primary index
+        struct SecondaryTable *secondaryTable = &perfectTable->secondaryTables[i]; // Get the secondary table at the primary index
         printf("Primary index %d:\n", i);                                  
         for (int j = 0; j < secondaryTable->size; j++)                      // For each secondary index
         {
@@ -73,7 +73,7 @@ void printPerfectHashTable(PerfectHashTable *perfectTable)
 }
 int main()
 {
-    PerfectHashTable *perfectTable = createPerfectHashTable(9); 
+    struct PerfectHashTable *perfectTable = createPerfectHashTable(9);
     insert(perfectTable, 75);                                
     insert(perfectTable, 15);                                 
     insert(perfectTable, 32);                                  

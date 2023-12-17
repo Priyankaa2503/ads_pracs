@@ -45,15 +45,15 @@ struct IntervalNode *insertInterval(struct IntervalNode *root, struct Interval *
     {
         return createIntervalNode(interval);
     }
-
+    // Get the low endpoint of the interval at the root
     int low = root->interval->low;
 
     if (interval->low < low)
-    {
+    {   // Insert into the left subtree
         root->left = insertInterval(root->left, interval);
     }
     else
-    {
+    {   // Insert into the right subtree
         root->right = insertInterval(root->right, interval);
     }
 
